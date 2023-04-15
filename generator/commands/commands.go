@@ -4,7 +4,7 @@ type Command interface {
 	Read(text string)
 }
 
-func HasCommand[T Command](commands []Command) T {
+func FilterCommand[T Command](commands []Command) T {
 	for _, command := range commands {
 		if res, ok := command.(T); ok {
 			return res
@@ -13,6 +13,17 @@ func HasCommand[T Command](commands []Command) T {
 
 	var nothing T
 	return nothing
+}
+
+func FilterCommands[T Command](commands []Command) []T {
+	var result []T
+	for _, command := range commands {
+		if res, ok := command.(T); ok {
+			result = append(result, res)
+		}
+	}
+
+	return result
 }
 
 const MapperTag string = "@mapper"

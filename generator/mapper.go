@@ -90,7 +90,7 @@ func NewTypes(decl *ast.FieldList, currentPackage string) (types []Type) {
 	return
 }
 
-func NewStructure(spec *ast.TypeSpec, structType *ast.StructType, info *types.Info, currentPackage string) Structure {
+func NewStructure(spec *ast.TypeSpec, info *types.Info, currentPackage string) Structure {
 	//structInfo, _ :=.(*types.Struct)
 	var structInfo *types.Struct
 	for expr, value := range info.Defs {
@@ -107,26 +107,6 @@ func NewStructure(spec *ast.TypeSpec, structType *ast.StructType, info *types.In
 	}
 
 	fieldCount := structInfo.NumFields()
-
-	//var fields []mappings.Field
-	//for _, fieldItem := range structType.Fields.List {
-	//	var field mappings.Field
-	//	expr := fieldItem.Type
-	//	switch expr.(type) {
-	//	case *ast.ArrayType:
-	//		field = mappings.NewArrayField(fieldItem, currentPackage)
-	//		break
-	//	case *ast.Ident: //Direct fieldItem without package declaration
-	//		field = mappings.NewObjectField(fieldItem.Type, fieldItem.Names[0].Name, currentPackage)
-	//		break
-	//	case *ast.SelectorExpr: //fieldItem with package declaration
-	//		field = mappings.NewObjectField(fieldItem.Type, fieldItem.Names[0].Name, currentPackage)
-	//		break
-	//	}
-	//
-	//	fields = append(fields, field)
-	//}
-
 	var fields []*types.Var
 	for i := 0; i < fieldCount; i++ {
 		field := structInfo.Field(i)

@@ -166,9 +166,9 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 						mappers = append(mappers, mapper)
 					}
 
-					structType, ok := typeSpec.Type.(*ast.StructType)
+					_, ok = typeSpec.Type.(*ast.StructType)
 					if ok {
-						structs = append(structs, NewStructure(typeSpec, structType, info, pack.Name))
+						structs = append(structs, NewStructure(typeSpec, info, pack.Name))
 					}
 				}
 			}

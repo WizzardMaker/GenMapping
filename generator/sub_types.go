@@ -6,7 +6,7 @@ type Type struct {
 	Package      string
 }
 
-func (t Type) GetName() string {
+func (t Type) GetFullName() string {
 	return t.ArgumentName + " " + t.Package + "." + t.Name
 }
 
