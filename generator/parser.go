@@ -53,11 +53,6 @@ func ParseProject(projectRoot string) (*Project, error) {
 		return nil
 	})
 
-	//info := &types.Info{
-	//	Defs:  make(map[*ast.Ident]types.Object),
-	//	Types: make(map[ast.Expr]types.TypeAndValue),
-	//}
-
 	loadConfig := new(packages.Config)
 	loadConfig.Dir = projectRoot
 	loadConfig.Mode = loadMode
@@ -72,9 +67,8 @@ func ParseProject(projectRoot string) (*Project, error) {
 				info = pack.TypesInfo
 				break
 			}
-
 		}
-		
+
 		mappersInPackage, structures, importsInPackage := FindMappersInPackage(a, info)
 		mappers = append(mappers, mappersInPackage...)
 		structs = append(structs, structures...)
@@ -86,8 +80,10 @@ func ParseProject(projectRoot string) (*Project, error) {
 	}
 
 	proj := Project{
-		Packages: parsedProject,
-		//MapperInterfaces: mapper,
+		Packages:         parsedProject,
+		MapperInterfaces: mappers,
+		Imports:          imports,
+		Structs:          structs,
 	}
 
 	return &proj, nil
@@ -150,7 +146,7 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 
 						var neededImports []Import
 						for _, method := range methods {
-							types := append(method.Params, method.Return...)
+							types := append(method.Params, method.Target)
 
 							for _, t := range types {
 								for _, packageImport := range packageImports {

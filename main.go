@@ -11,23 +11,33 @@ func main() {
 
 	fmt.Println(args)
 
-	if len(args) != 2 {
+	if len(args) != 1 {
 		fmt.Println("Missing args")
 		return
 	}
 
-	GenerateMapper(args[0], args[1])
+	GenerateMappers(args[0])
 
 	return
 }
 
-func GenerateMapper(mapperInterfaceName, mainPath string) string {
+func GenerateMappers(mainPath string) {
 	project, err := generator.ParseProject(mainPath)
 	if err != nil {
-		return ""
+		return
 	}
 
-	fmt.Println(project)
+	for _, mapper := range project.MapperInterfaces {
+		fmt.Printf("Mapper: %s\n", mapper.Name)
+		for _, method := range mapper.Methods {
+			fmt.Printf("- Mapping Method: %s\n", method.Name)
 
-	return ""
+			fmt.Printf("-- From: %v\n", method.Params)
+			fmt.Printf("-- To: %v\n", method.Target)
+		}
+
+		fmt.Println(generator.GenerateMapper(mapper, project))
+	}
+
+	return
 }

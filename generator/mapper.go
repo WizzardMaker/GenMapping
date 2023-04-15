@@ -7,29 +7,6 @@ import (
 	"go/types"
 )
 
-func NewMapper(interfaceType ast.InterfaceType) (*Mapper, error) {
-	var methods []Method
-
-	ast.Inspect(&interfaceType, func(node ast.Node) bool {
-		mapping, ok := node.(*ast.FuncDecl)
-		if ok {
-			methods = append(methods, Method{
-				Name:     mapping.Name.Name,
-				Return:   nil,
-				Params:   nil,
-				Commands: nil,
-			})
-		}
-
-		return true
-	})
-
-	return &Mapper{
-		Interface: interfaceType,
-		Methods:   nil,
-	}, nil
-}
-
 type Mapper struct {
 	Interface ast.InterfaceType
 	Name      string
@@ -40,38 +17,49 @@ type Mapper struct {
 
 func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Method) {
 	for _, field := range methodList.List {
+		errorHappened := false
+
 		funcType, ok := field.Type.(*ast.FuncType)
 		if !ok {
 			continue
 		}
 
-		returns := NewTypes(funcType.Results, currentPackage)
-		for i, t := range returns {
-			index := fmt.Sprintf("%d", i)
-			if t.ArgumentName == "" {
-				returns[i].ArgumentName = "target"
-				if len(returns) > 1 {
-					returns[i].ArgumentName += index
+		var commandList []commands.Command
+
+		errorHandling := false
+
+		var target Type
+		for i, t := range NewTypes(funcType.Results, currentPackage) {
+			if t.Name == "error" {
+				if i == 0 {
+					fmt.Printf("Error handling is not allowed as first argument | Method:%s", field.Names[0].Name)
+					errorHappened = true
+					break
 				}
+
+				errorHandling = true
+				continue
 			}
+
+			if t.ArgumentName == "" {
+				target = t
+				target.ArgumentName = "target"
+			}
+		}
+		if errorHappened {
+			continue
 		}
 
 		methods = append(methods, Method{
-			Name:     field.Names[0].Name,
-			Return:   returns,
-			Params:   NewTypes(funcType.Params, currentPackage),
-			Commands: nil,
+			Name:          field.Names[0].Name,
+			Target:        target,
+			Params:        NewTypes(funcType.Params, currentPackage),
+			Commands:      commandList,
+			ErrorHandling: errorHandling,
 		})
 	}
 
 	return
-}
-
-type Method struct {
-	Name     string
-	Return   []Type
-	Params   []Type
-	Commands []commands.Command
 }
 
 func NewTypes(decl *ast.FieldList, currentPackage string) (types []Type) {

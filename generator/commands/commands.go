@@ -4,15 +4,34 @@ type Command interface {
 	Read(text string)
 }
 
+func HasCommand[T Command](commands []Command) T {
+	for _, command := range commands {
+		if res, ok := command.(T); ok {
+			return res
+		}
+	}
+
+	var nothing T
+	return nothing
+}
+
 const MapperTag string = "@mapper"
 
 type MapperCommand struct {
 	TargetFile Attribute
 }
 
+func (c *MapperCommand) Read(text string) {
+
+}
+
 const MappingTag string = "@mapping"
 
 type MappingCommand struct {
+}
+
+func (c *MappingCommand) Read(text string) {
+
 }
 
 // TranslationTag
@@ -24,6 +43,10 @@ type TranslationCommand struct {
 	To   Attribute
 }
 
+func (c *TranslationCommand) Read(text string) {
+
+}
+
 // ExpressionTag
 // target="X",expression="Y"
 const ExpressionTag string = "@expression"
@@ -31,4 +54,8 @@ const ExpressionTag string = "@expression"
 type ExpressionCommand struct {
 	Target     Attribute
 	Expression Attribute
+}
+
+func (c *ExpressionCommand) Read(text string) {
+
 }

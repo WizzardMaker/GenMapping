@@ -6,6 +6,10 @@ type Type struct {
 	Package      string
 }
 
+func (t Type) GetName() string {
+	return t.ArgumentName + " " + t.Package + "." + t.Name
+}
+
 type Field struct {
 	Name string
 }

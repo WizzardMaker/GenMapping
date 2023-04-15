@@ -8,8 +8,8 @@ import (
 func TestGenerateMapper(t *testing.T) {
 	projectPath, _ := os.Getwd()
 
-	testInterface := "SensorMapper"
+	//testInterface := "SensorMapper"
 	//testInterfaceFile := "/test/testInterface.go"
 
-	GenerateMapper(testInterface, projectPath)
+	GenerateMappers(projectPath)
 }

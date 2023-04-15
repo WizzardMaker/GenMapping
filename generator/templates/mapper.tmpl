@@ -1,0 +1,6 @@
+{{- /*gotype:AutoMapper/generator.Mapper*/ -}}
+//{{.Name}}:
+
+{{ range .Methods -}}
+{{template "mapping" . -}}
+{{- end -}}

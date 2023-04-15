@@ -1,0 +1,6 @@
+{{- define "mapping" -}}
+{{- /*gotype:AutoMapper/generator.Method*/ -}}
+func {{.Name}}({{- range $index, $element := .Params -}}{{if ne $index 0}}, {{end}}{{$element.GetName}} {{- end -}}) ({{.Target.GetName}} {{if .ErrorHandling}}, err error {{end}}) {
+{{.GenerateMapping getProject}}
+}
+{{- end -}}
