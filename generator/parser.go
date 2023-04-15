@@ -2,6 +2,7 @@ package generator
 
 import (
 	"AutoMapper/generator/commands"
+	"AutoMapper/generator/mappings"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -34,7 +35,7 @@ func ParseProject(projectRoot string) (*Project, error) {
 
 	var mappers []Mapper
 	var structs []Structure
-	var imports []Import
+	var imports []mappings.Import
 
 	err = filepath.WalkDir(projectRoot, func(filePath string, d os.DirEntry, err error) error {
 		if err != nil {
@@ -99,11 +100,11 @@ func merge[T any](ms ...map[string]T) map[string]T {
 	return res
 }
 
-func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Structure, []Import) {
+func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Structure, []mappings.Import) {
 	var mappers []Mapper
 	var structs []Structure
 
-	var packageImports []Import
+	var packageImports []mappings.Import
 
 	ast.Inspect(pack, func(node ast.Node) bool {
 		inter, ok := node.(*ast.GenDecl)
@@ -111,7 +112,7 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 			for _, spec := range inter.Specs {
 				importSpec, ok := spec.(*ast.ImportSpec)
 				if ok {
-					imp := Import{
+					imp := mappings.Import{
 						Path: strings.Trim(importSpec.Path.Value, "\""),
 					}
 
@@ -138,13 +139,13 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 					interfaceType, ok := typeSpec.Type.(*ast.InterfaceType)
 					if ok {
 						//only interfaces should be mapper
-						if !strings.Contains(doc, commands.MapperTag) {
+						if !strings.Contains(doc, string(commands.MapperTag)) {
 							return true
 						}
 
 						methods := NewMethods(interfaceType.Methods, pack.Name)
 
-						var neededImports []Import
+						var neededImports []mappings.Import
 						for _, method := range methods {
 							types := append(method.Params, method.Target)
 
@@ -162,6 +163,7 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 							Name:      typeSpec.Name.Name,
 							Methods:   methods,
 							Imports:   neededImports,
+							Commands:  commands.FromText(doc, commands.MapperTag),
 						}
 						mappers = append(mappers, mapper)
 					}

@@ -2,15 +2,16 @@ package generator
 
 import (
 	"AutoMapper/generator/commands"
+	mappings2 "AutoMapper/generator/mappings"
 	"fmt"
 	"go/types"
 )
 
 type Method struct {
 	Name          string
-	Target        Type
+	Target        mappings2.Type
 	ErrorHandling bool
-	Params        []Type
+	Params        []mappings2.Type
 	Commands      []commands.Command
 }
 
@@ -40,45 +41,103 @@ func (m Method) GenerateMapping(project Project) string {
 		}
 	}
 
-	translations := commands.FilterCommands[*commands.TranslationCommand](m.Commands)
+	overrides := commands.FilterCommands[commands.OverrideCommand](m.Commands)
 
-	for _, field := range targetStruct.Fields {
-		t := field.Type()
-		switch t.(type) {
-		case *types.Basic:
-			//basic := t.(*types.Basic)
+	fields := targetStruct.Fields
+	targetMappings := StructFieldsToMappings(fields)
 
-			trans := findTranslation(translations, field.Name())
-			if len(trans) != 0 {
-				output += fmt.Sprintf("\n\t%s = %s", trans[0].From.Value, m.Target.ArgumentName+"."+field.Name())
-			} else {
-				source := findSource(m.Params, field.Name())
-				output += fmt.Sprintf("\n\t%s = %s", source.Name, m.Target.ArgumentName+"."+field.Name())
+	for _, override := range overrides {
+		mapping := mappings2.Find("target", targetMappings, override.IsOverrideTarget)
+		if mapping == nil {
+			continue
+		}
+		mapping.Source.Mapped = true
+		mapping.Source.Source = override.OverrideSource()
+	}
+
+	for _, target := range targetMappings {
+		if target.Source.Mapped {
+			continue
+		}
+		target.Inspect("target", func(fullPath string, node *mappings2.MappingNode) bool {
+
+			return true
+		})
+	}
+
+	for _, target := range targetMappings {
+		target.Inspect("target", func(fullPath string, node *mappings2.MappingNode) bool {
+			if !node.Source.Mapped {
+				output += fmt.Sprintf("\n\t//target.%s is not mapped", fullPath)
+				return true
 			}
 
-			break
-		}
+			output += fmt.Sprintf("\n\ttarget.%s = %s", fullPath, node.Source.Source)
+			return true
+		})
 	}
 
 	return output
 }
 
-func findTranslation(translations []*commands.TranslationCommand, to string) []*commands.TranslationCommand {
-	var output []*commands.TranslationCommand
-	for _, translation := range translations {
-		if translation.To.Value == to {
-			output = append(output, translation)
+func StructFieldsToMappings(fields []*types.Var) []*mappings2.MappingNode {
+	var mappings []*mappings2.MappingNode
+	for _, field := range fields {
+		if field.Exported() {
+			mappings = append(mappings, NewMapping(field))
 		}
 	}
 
-	return output
+	return mappings
 }
-func findSource(types []Type, to string) Type {
-	for _, sourceType := range types {
-		if sourceType.Name == to {
-			return sourceType
+
+func NewMapping(field *types.Var) *mappings2.MappingNode {
+	t := field.Type()
+	return MappingFromType(field, t)
+}
+
+func MappingFromType(field *types.Var, t types.Type) *mappings2.MappingNode {
+	var result mappings2.MappingNode
+	switch t.(type) {
+	case *types.Pointer:
+		pResult := MappingFromType(field, t.(*types.Pointer).Elem())
+		pResult.TargetType.Name = "*" + pResult.TargetType.Name
+		return pResult
+	case *types.Slice:
+		pResult := MappingFromType(field, t.(*types.Slice).Elem())
+		pResult.TargetType.Name = "[]" + pResult.TargetType.Name
+		return pResult
+	case *types.Basic:
+		basic := t.(*types.Basic)
+
+		result.TargetType = mappings2.Type{
+			ArgumentName: field.Name(),
+			Name:         basic.Name(),
+			Package:      "--go--",
 		}
+		break
+	case *types.Named:
+		named := t.(*types.Named)
+		struc, ok := named.Underlying().(*types.Struct)
+		if !ok {
+			fmt.Println("Unknown type!")
+		}
+
+		object := named.Obj()
+
+		result.TargetType = mappings2.Type{
+			ArgumentName: field.Name(),
+			Name:         object.Name(),
+			Package:      object.Pkg().Path(),
+		}
+
+		result.Children = StructFieldsToMappings(GetStructureFields(struc))
+
+		break
+	default:
+		fmt.Printf("Unknown type detected (%s)\n", t.String())
+		break
 	}
 
-	return Type{}
+	return &result
 }

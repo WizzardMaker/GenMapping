@@ -10,7 +10,7 @@ import (
 type SensorMapper interface {
 
 	//BoToDto
-	//@mapping(from="sensor.ComplicatedObject.BoSimple", to="sensor.ComplicatedObject.DtoSimple")
+	//@translate(from="sensor.ComplicatedObject.BoSimple", to="target.ComplicatedObject.DtoSimple")
 	BoToDto(sensor bo.Sensor) dto.Sensor
 }
 
@@ -19,7 +19,7 @@ type (
 	// @mapper
 	TestMapper interface {
 		//BoToDto
-		//@mapping(from="sensor.ComplicatedObject.BoSimple", to="sensor.ComplicatedObject.DtoSimple")
+		//@translate(from="sensor.ComplicatedObject.BoSimple", to="target.ComplicatedObject.DtoSimple")
 		BoToDto(sensor bo.Sensor) dto.Sensor
 	}
 )

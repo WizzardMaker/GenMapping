@@ -2,6 +2,7 @@ package generator
 
 import (
 	"AutoMapper/generator/commands"
+	"AutoMapper/generator/mappings"
 	"fmt"
 	"go/ast"
 	"go/types"
@@ -11,28 +12,28 @@ type Mapper struct {
 	Interface ast.InterfaceType
 	Name      string
 	Methods   []Method
-	Imports   []Import
+	Imports   []mappings.Import
 	Commands  []commands.Command
 }
 
 func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Method) {
-	for _, field := range methodList.List {
+	for _, method := range methodList.List {
 		errorHappened := false
 
-		funcType, ok := field.Type.(*ast.FuncType)
+		funcType, ok := method.Type.(*ast.FuncType)
 		if !ok {
 			continue
 		}
 
-		var commandList []commands.Command
+		commandList := commands.FromText(method.Doc.Text())
 
 		errorHandling := false
 
-		var target Type
+		var target mappings.Type
 		for i, t := range NewTypes(funcType.Results, currentPackage) {
 			if t.Name == "error" {
 				if i == 0 {
-					fmt.Printf("Error handling is not allowed as first argument | Method:%s", field.Names[0].Name)
+					fmt.Printf("Error handling is not allowed as first argument | Method:%s", method.Names[0].Name)
 					errorHappened = true
 					break
 				}
@@ -51,7 +52,7 @@ func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Met
 		}
 
 		methods = append(methods, Method{
-			Name:          field.Names[0].Name,
+			Name:          method.Names[0].Name,
 			Target:        target,
 			Params:        NewTypes(funcType.Params, currentPackage),
 			Commands:      commandList,
@@ -62,7 +63,7 @@ func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Met
 	return
 }
 
-func NewTypes(decl *ast.FieldList, currentPackage string) (types []Type) {
+func NewTypes(decl *ast.FieldList, currentPackage string) (types []mappings.Type) {
 	for _, field := range decl.List {
 		argumentName := ""
 		if len(field.Names) != 0 {
@@ -80,7 +81,7 @@ func NewTypes(decl *ast.FieldList, currentPackage string) (types []Type) {
 			packageName = packageType.Name
 		}
 
-		types = append(types, Type{
+		types = append(types, mappings.Type{
 			ArgumentName: argumentName,
 			Name:         typeExpr.Sel.Name,
 			Package:      packageName,
@@ -95,7 +96,10 @@ func NewStructure(spec *ast.TypeSpec, info *types.Info, currentPackage string) S
 	var structInfo *types.Struct
 	for expr, value := range info.Defs {
 		if expr.Obj != nil && expr.Obj.Name == spec.Name.Name {
-			typ := value.Type().(*types.Named)
+			typ, ok := value.Type().(*types.Named)
+			if !ok {
+				continue
+			}
 			structInfo = typ.Underlying().(*types.Struct)
 			break
 		}
@@ -106,18 +110,23 @@ func NewStructure(spec *ast.TypeSpec, info *types.Info, currentPackage string) S
 		return Structure{}
 	}
 
-	fieldCount := structInfo.NumFields()
-	var fields []*types.Var
-	for i := 0; i < fieldCount; i++ {
-		field := structInfo.Field(i)
-		fields = append(fields, field)
-	}
+	fields := GetStructureFields(structInfo)
 
 	return Structure{
 		Package: currentPackage,
 		Name:    spec.Name.Name,
 		Fields:  fields,
 	}
+}
+
+func GetStructureFields(structInfo *types.Struct) []*types.Var {
+	fieldCount := structInfo.NumFields()
+	var fields []*types.Var
+	for i := 0; i < fieldCount; i++ {
+		field := structInfo.Field(i)
+		fields = append(fields, field)
+	}
+	return fields
 }
 
 type Structure struct {

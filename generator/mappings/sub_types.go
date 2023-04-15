@@ -1,4 +1,4 @@
-package generator
+package mappings
 
 type Type struct {
 	ArgumentName string
@@ -8,10 +8,6 @@ type Type struct {
 
 func (t Type) GetFullName() string {
 	return t.ArgumentName + " " + t.Package + "." + t.Name
-}
-
-type Field struct {
-	Name string
 }
 
 type Import struct {
