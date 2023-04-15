@@ -24,7 +24,6 @@ func getMultilineRegexResult(text string, pattern string) string {
 	}
 
 	result := strings.Replace(strings.TrimSpace(results[1]), "//", "", -1)
-	fmt.Println("Found command: ", result)
 	return result
 }
 

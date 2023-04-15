@@ -14,6 +14,15 @@ type SensorMapper interface {
 	BoToDto(sensor bo.Sensor) dto.Sensor
 }
 
+// PropertyMapper
+// @mapper
+type PropertyMapper interface {
+
+	//BoToDto
+	//@translate(from="property.BoSimple", to="target.DtoSimple")
+	BoToDto(property bo.Property) dto.Property
+}
+
 type (
 	//TestMapper
 	// @mapper
