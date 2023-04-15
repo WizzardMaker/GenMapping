@@ -163,7 +163,7 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 							Name:      typeSpec.Name.Name,
 							Methods:   methods,
 							Imports:   neededImports,
-							Commands:  commands.FromText(doc, commands.MapperTag),
+							Commands:  commands.FromText(doc, commands.PerMapperTags...),
 						}
 						mappers = append(mappers, mapper)
 					}

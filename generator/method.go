@@ -49,6 +49,7 @@ func (m Method) GenerateMapping(project Project) string {
 	for _, override := range overrides {
 		mapping := mappings2.Find("target", targetMappings, override.IsOverrideTarget)
 		if mapping == nil {
+			fmt.Println("Failed to find override target, ")
 			continue
 		}
 		mapping.Source.Mapped = true

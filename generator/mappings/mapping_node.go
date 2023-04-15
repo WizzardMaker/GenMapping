@@ -35,9 +35,11 @@ func (m *MappingNode) GetNode() *MappingNode {
 	return m
 }
 
-func (m *MappingNode) Inspect(base string, inspect func(fullPath string, node *MappingNode) bool) {
-	var inspectRec func(base string, m *MappingNode, inspect func(fullPath string, node *MappingNode) bool) bool
-	inspectRec = func(base string, m *MappingNode, inspect func(fullPath string, node *MappingNode) bool) bool {
+type InspectionFunc func(fullPath string, node *MappingNode) bool
+
+func (m *MappingNode) Inspect(base string, inspect InspectionFunc) {
+	var inspectRec func(base string, m *MappingNode, inspect InspectionFunc) bool
+	inspectRec = func(base string, m *MappingNode, inspect InspectionFunc) bool {
 		for i := range m.Children {
 			if !inspect(base+m.TargetType.ArgumentName+"."+m.Children[i].TargetType.ArgumentName, m.Children[i]) {
 				return false

@@ -27,3 +27,25 @@ func getMultilineRegexResult(text string, pattern string) string {
 	fmt.Println("Found command: ", result)
 	return result
 }
+
+func FilterCommand[T Command](commands []Command) T {
+	for _, command := range commands {
+		if res, ok := command.(T); ok {
+			return res
+		}
+	}
+
+	var nothing T
+	return nothing
+}
+
+func FilterCommands[T Command](commands []Command) []T {
+	var result []T
+	for _, command := range commands {
+		if res, ok := command.(T); ok {
+			result = append(result, res)
+		}
+	}
+
+	return result
+}

@@ -25,7 +25,7 @@ func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Met
 			continue
 		}
 
-		commandList := commands.FromText(method.Doc.Text())
+		commandList := commands.FromText(method.Doc.Text(), commands.PerMappingTags...)
 
 		errorHandling := false
 
