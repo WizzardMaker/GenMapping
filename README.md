@@ -3,7 +3,22 @@ This project is a struct to struct mapping code generator for Go.
 
 ## Concept
 AutoMapper analyzes a Go module and searches for interfaces which describe desired mapping operations. 
-AutoMapper generates mapper based on those interfaces. The generation can be configured with tag documentation
+AutoMapper generates mapper based on those interfaces. The generation can be configured with tag documentation.
+
+All mappers can also cross-reference themselves in the mapping process:
+```
+type Foo struct {
+  A Bar
+}
+
+type Foo2 struct {
+  A Bar2
+} 
+
+type Bar struct {}
+type Bar2 struct {}
+```
+When you create a mapper for Bar to Bar2, the mapper for Foo to Foo2 can use that already defined mapper, removing the necessity to write that logic yourself
 
 ### Tags
 Tags are comment annotations which instruct AutoMapper how to generate the mapper functions.
@@ -16,6 +31,10 @@ A mapper is a simple Go interface annotated with the `@mapper` tag. This tag tel
 Mapping functions have the following rules:
 - Only 1 return is allowed _(error handling is planned in a future update)_
 - It has to be exported
+- It can have any number of parameters
+
+Mapping function cross-reference has stricter rules:
+- Only 1 parameter is allowed (Source Type)
 
 ## Examples
 
@@ -30,6 +49,15 @@ type SensorMapper interface {
 	//BoToDto
 	//@translate(from="sensor.ComplicatedObject.BoSimple", to="ComplicatedObject.DtoSimple")
 	BoToDto(sensor bo.Sensor) dto.Sensor
+}
+
+// PropertyMapper
+// @mapper
+type PropertyMapper interface {
+
+//BoToDto
+//@translate(from="property.BoSimple", to="DtoSimple")
+BoToDto(property bo.Property) dto.Property
 }
 ```
 
@@ -60,6 +88,24 @@ func BoToDto(sensor bo.Sensor) (target dto.Sensor) {
 		//target.PropertyArray[i0].Time is not directly mapped
 	}
 	return
+}
+
+//-------------------------------------
+package PropertyMapper
+
+import (
+"AutoMapper/test/bo"
+bo2 "AutoMapper/test/double_name/bo"
+"AutoMapper/test/dto"
+)
+
+//PropertyMapper:
+
+func BoToDto(property bo.Property) (target dto.Property) {
+  target.DtoSimple = property.BoSimple
+  target.DoubleTest = property.DoubleTest
+  target.Time = property.Time
+  return
 }
 ```
 
