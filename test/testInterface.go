@@ -16,7 +16,7 @@ type SensorMapper interface {
 
 	//BoToDtoComplex
 	//@translate(from="sensor.ComplicatedObject.BoSimple", to="ComplicatedObject.DtoSimple")
-	//@translate(from="constOverride", to="Simple")
+	//@translate(from="constOverride", to="PropertyArray.DtoSimple")
 	BoToDtoComplex(sensor bo.Sensor, constOverride int) dto.Sensor
 }
 

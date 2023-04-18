@@ -7,7 +7,9 @@ type MapperCommand struct {
 }
 
 func (c *MapperCommand) Read(text string) string {
-	_, readText := getCommandText(text, MapperTag)
+	commandText, readText := getCommandText(text, MapperTag)
+
+	c.TargetFile.FromCommandText("targetFile", commandText)
 
 	return readText
 }
