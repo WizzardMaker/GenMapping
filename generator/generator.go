@@ -54,7 +54,7 @@ func ProcessImports(mappingFunctions string) string {
 	const IMPORT_PATTERN = "%\\*__\\*%"
 
 	// html/template.X = 0->html/template 1->template 2->X
-	r, err := regexp.Compile(IMPORT_PATTERN + "(.*?\\/([\\w]*?))\\.(.*?)" + IMPORT_PATTERN)
+	r, err := regexp.Compile(IMPORT_PATTERN + "((?:[\\w\\d_/]*?\\/)?([\\w\\d_-]*?))\\.(.*?)" + IMPORT_PATTERN)
 	if err != nil {
 		panic(err)
 	}
@@ -90,6 +90,11 @@ func ProcessImports(mappingFunctions string) string {
 	for _, importIndices := range alreadyImports {
 		for count, index := range importIndices {
 			importItem := foundImports[index]
+			if strings.Contains(importItem[0], "--go--") {
+				output = strings.Replace(output, importItem[0], importItem[3], -1)
+				continue
+			}
+
 			importText += "\n\t"
 
 			var packageOutput string

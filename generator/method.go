@@ -32,7 +32,7 @@ func (m Method) GenerateMapping(project Project) string {
 
 	var sourceStructs []InputStructure
 
-	var params []mappings.Type
+	var nonStructParams []mappings.Type
 
 	//Iterate over all known structs
 	for _, structure := range project.Structs {
@@ -64,7 +64,7 @@ func (m Method) GenerateMapping(project Project) string {
 		}
 
 		if !isStruct {
-			params = append(params, param)
+			nonStructParams = append(nonStructParams, param)
 		}
 	}
 
@@ -152,7 +152,7 @@ func MappingCreateInspect(output *string, mappingCount *int) mappings.Inspection
 			fallthrough
 		case mappings.DefaultType:
 			if !node.Source.Mapped {
-				*output += fmt.Sprintf("\n\t//target.%s is not mapped", fullPath)
+				*output += fmt.Sprintf("\n\t//target.%s is not directly mapped", fullPath)
 				return true
 			}
 			*mappingCount++
@@ -182,7 +182,7 @@ func MappingCreateInspect(output *string, mappingCount *int) mappings.Inspection
 				*output += arrayOutput
 				*mappingCount += arrayMappingCount
 			} else {
-				*output += fmt.Sprintf("\n\t//target.%s[%s] is not mapped", fullPath, arrayIndex)
+				*output += fmt.Sprintf("\n\t//target.%s[%s] is not directly mapped", fullPath, arrayIndex)
 			}
 
 			return false

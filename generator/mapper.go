@@ -123,21 +123,33 @@ func NewTypes(decl *ast.FieldList, currentPackage string) (types []mappings.Type
 		}
 		packageName := currentPackage
 
-		typeExpr, ok := field.Type.(*ast.SelectorExpr)
-		if !ok {
-			continue
-		}
+		switch field.Type.(type) {
+		case *ast.SelectorExpr:
+			//Nonbasic type:
+			typeExpr := field.Type.(*ast.SelectorExpr)
 
-		packageType, ok := typeExpr.X.(*ast.Ident)
-		if ok {
-			packageName = packageType.Name
-		}
+			packageType, ok := typeExpr.X.(*ast.Ident)
+			if ok {
+				packageName = packageType.Name
+			}
 
-		types = append(types, mappings.Type{
-			ArgumentName: argumentName,
-			Name:         typeExpr.Sel.Name,
-			Package:      packageName,
-		})
+			types = append(types, mappings.Type{
+				ArgumentName: argumentName,
+				Name:         typeExpr.Sel.Name,
+				Package:      packageName,
+			})
+			break
+		case *ast.Ident:
+			//basic type:
+			typeExpr := field.Type.(*ast.Ident)
+
+			types = append(types, mappings.Type{
+				ArgumentName: argumentName,
+				Name:         typeExpr.Name,
+				Package:      "--go--",
+			})
+			break
+		}
 	}
 
 	return
