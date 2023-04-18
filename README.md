@@ -6,7 +6,7 @@ AutoMapper analyzes a Go module and searches for interfaces which describe desir
 AutoMapper generates mapper based on those interfaces. The generation can be configured with tag documentation.
 
 All mappers can also cross-reference themselves in the mapping process:
-```
+```go
 type Foo struct {
   A Bar
 }
@@ -55,9 +55,9 @@ type SensorMapper interface {
 // @mapper
 type PropertyMapper interface {
 
-//BoToDto
-//@translate(from="property.BoSimple", to="DtoSimple")
-BoToDto(property bo.Property) dto.Property
+	//BoToDto
+	//@translate(from="property.BoSimple", to="DtoSimple")
+	BoToDto(property bo.Property) dto.Property
 }
 ```
 
@@ -94,18 +94,17 @@ func BoToDto(sensor bo.Sensor) (target dto.Sensor) {
 package PropertyMapper
 
 import (
-"AutoMapper/test/bo"
-bo2 "AutoMapper/test/double_name/bo"
-"AutoMapper/test/dto"
+  "AutoMapper/test/bo"
+  "AutoMapper/test/dto"
 )
 
 //PropertyMapper:
 
 func BoToDto(property bo.Property) (target dto.Property) {
-  target.DtoSimple = property.BoSimple
-  target.DoubleTest = property.DoubleTest
-  target.Time = property.Time
-  return
+	target.DtoSimple = property.BoSimple
+	target.DoubleTest = property.DoubleTest
+	target.Time = property.Time
+	return
 }
 ```
 
