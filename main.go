@@ -3,6 +3,7 @@ package main
 import (
 	"AutoMapper/generator"
 	"fmt"
+	"go/format"
 	"os"
 	"path/filepath"
 )
@@ -71,7 +72,12 @@ func GenerateMappers(mainPath string) {
 			panic(err)
 		}
 
-		_, err = f.WriteString(finalOutput)
+		formattedOutput, err := format.Source([]byte(finalOutput))
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = f.Write(formattedOutput)
 		if err != nil {
 			panic(err)
 		}
