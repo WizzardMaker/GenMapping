@@ -11,6 +11,7 @@ import (
 	"golang.org/x/tools/go/packages"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -20,6 +21,17 @@ func ParseProject(projectRoot string) (*Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("go.mod file not found")
 	}
+
+	modContent, err := os.ReadFile(goModPath)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err := regexp.Compile("module (.*)")
+	if err != nil {
+		return nil, err
+	}
+	moduleName := r.FindStringSubmatch(string(modContent))[1]
 
 	files := token.FileSet{}
 	var parsedProject map[string]*ast.Package
@@ -116,6 +128,8 @@ func ParseProject(projectRoot string) (*Project, error) {
 		Structs:          structs,
 		GlobalTypes:      globalInfos,
 		GlobalCommands:   globalCommands,
+		ModuleName:       moduleName,
+		BasePath:         projectRoot,
 	}
 
 	return &proj, nil

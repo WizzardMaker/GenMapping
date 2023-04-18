@@ -108,7 +108,7 @@ func (m Method) GenerateMapping(project Project) string {
 						foundMapper, nodeMapper, nodeMapping := project.MapperInterfaces.GetFittingMapper(sourceNode.TargetType, targetNode.TargetType)
 						if foundMapper {
 							targetNode.Source.Mapped = true
-							targetNode.Source.Source = fmt.Sprintf("%s.%s(%s)", nodeMapper.Name, nodeMapping.Name, sourceFullPath)
+							targetNode.Source.Source = fmt.Sprintf("%s.%s(%s)", "%*__*%"+nodeMapper.PackagePath(&project), nodeMapping.Name+"%*__*%", sourceFullPath)
 							foundFinalMapping = true
 							return false
 						}

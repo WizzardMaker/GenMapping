@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"go/ast"
 	"go/types"
+	"path/filepath"
+	"strings"
 )
 
 type Mapper struct {
@@ -33,6 +35,18 @@ func (m Mapper) OutputPath(project *Project) string {
 	}
 
 	return m.outputPath + "/" + outputDirName + "/" + m.Name + "/mapper" + ".go"
+}
+
+func (m Mapper) PackagePath(project *Project) string {
+	//C:/src/module/X/mapper
+	path := m.OutputPath(project)
+
+	//X/mapper
+	path = strings.TrimPrefix(path, project.BasePath)
+	path = filepath.Dir(path)
+
+	//ModuleName/X/mapper
+	return strings.Replace(project.ModuleName+path, "\\", "/", -1)
 }
 
 func NewMethods(methodList *ast.FieldList, currentPackage string, info *types.Info) (methods []Method) {

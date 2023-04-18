@@ -14,4 +14,7 @@ type Project struct {
 	Imports          []mappings.Import
 	GlobalCommands   []commands.Command
 	GlobalTypes      []*types.Info
+
+	ModuleName string
+	BasePath   string
 }
