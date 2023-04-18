@@ -133,18 +133,63 @@ func (m Method) GenerateMapping(project Project) string {
 	}
 
 	for _, target := range targetMappings {
-		target.Inspect("", func(fullPath string, node *mappings.MappingNode) bool {
-			if !node.Source.Mapped {
-				output += fmt.Sprintf("\n\t//target.%s is not mapped", fullPath)
-				return true
-			}
-
-			output += fmt.Sprintf("\n\ttarget.%s = %s", fullPath, node.Source.Source)
-			return true
-		})
+		mappingCount := 0
+		mappings.InspectStacked(target, "", nil, MappingCreateInspect(&output, &mappingCount))
 	}
 
 	return output
+}
+
+type StackContext struct {
+	arrayDepth    int
+	arrayFullPath string
+}
+
+func MappingCreateInspect(output *string, mappingCount *int) mappings.InspectionStackedFunc[StackContext] {
+	return func(fullPath string, node *mappings.MappingNode, c *StackContext) bool {
+		switch node.TargetType.Underlying {
+		case mappings.PointerType:
+			fallthrough
+		case mappings.DefaultType:
+			if !node.Source.Mapped {
+				*output += fmt.Sprintf("\n\t//target.%s is not mapped", fullPath)
+				return true
+			}
+			*mappingCount++
+			*output += fmt.Sprintf("\n\ttarget.%s = %s", fullPath, node.Source.Source)
+			break
+		case mappings.ArrayType:
+			arrayIndex := fmt.Sprintf("i%d", c.arrayDepth)
+			c.arrayDepth++
+
+			arrayMappingCount := 0
+			arrayOutput := ""
+
+			arrayOutput += fmt.Sprintf("\n\tfor %s := range target.%s {", arrayIndex, fullPath)
+
+			if node.Source.Mapped {
+				arrayMappingCount++
+				arrayOutput += fmt.Sprintf("\n\ttarget.%s[%s] = %s", fullPath, arrayIndex, node.Source.Source)
+			}
+
+			for _, arrayChild := range node.Children {
+				mappings.InspectStacked(arrayChild, fullPath+"["+arrayIndex+"].", c, MappingCreateInspect(&arrayOutput, &arrayMappingCount))
+			}
+
+			arrayOutput += fmt.Sprintf("\n\t}")
+
+			if arrayMappingCount != 0 {
+				*output += arrayOutput
+				*mappingCount += arrayMappingCount
+			} else {
+				*output += fmt.Sprintf("\n\t//target.%s[%s] is not mapped", fullPath, arrayIndex)
+			}
+
+			return false
+		}
+
+		return true
+	}
 }
 
 func StructFieldsToMappings(fields []*types.Var) []*mappings.MappingNode {
@@ -168,11 +213,11 @@ func MappingFromType(field *types.Var, t types.Type) *mappings.MappingNode {
 	switch t.(type) {
 	case *types.Pointer:
 		pResult := MappingFromType(field, t.(*types.Pointer).Elem())
-		pResult.TargetType.Name = "*" + pResult.TargetType.Name
+		pResult.TargetType.Underlying = mappings.PointerType
 		return pResult
 	case *types.Slice:
 		pResult := MappingFromType(field, t.(*types.Slice).Elem())
-		pResult.TargetType.Name = "[]" + pResult.TargetType.Name
+		pResult.TargetType.Underlying = mappings.ArrayType
 		return pResult
 	case *types.Basic:
 		basic := t.(*types.Basic)

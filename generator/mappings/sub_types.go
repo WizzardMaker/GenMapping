@@ -1,9 +1,18 @@
 package mappings
 
+type UnderlyingType int
+
+const (
+	DefaultType UnderlyingType = iota
+	ArrayType
+	PointerType
+)
+
 type Type struct {
 	ArgumentName string
 	Name         string
 	Package      string
+	Underlying   UnderlyingType
 }
 
 func (t Type) GetFullName() string {

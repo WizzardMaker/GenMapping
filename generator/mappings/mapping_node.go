@@ -62,3 +62,36 @@ func (m *MappingNode) Inspect(base string, inspect InspectionFunc) {
 
 	inspectRec(base, m, inspect)
 }
+
+type InspectionStackedFunc[Stack any] func(fullPath string, node *MappingNode, stackContext *Stack) bool
+
+func InspectStacked[Stack any](m *MappingNode, base string, baseStack *Stack, inspect InspectionStackedFunc[Stack]) {
+	var inspectRec func(base string, m *MappingNode, inspect InspectionStackedFunc[Stack], stackContext *Stack) bool
+	inspectRec = func(base string, m *MappingNode, inspect InspectionStackedFunc[Stack], stackContext *Stack) bool {
+		nStack := *stackContext
+
+		for i := range m.Children {
+			if !inspect(base+m.TargetType.ArgumentName+"."+m.Children[i].TargetType.ArgumentName, m.Children[i], &nStack) {
+				return false
+			}
+		}
+
+		for i := range m.Children {
+			if !inspectRec(base+m.TargetType.ArgumentName+".", m.Children[i], inspect, &nStack) {
+				return false
+			}
+		}
+
+		return true
+	}
+	var stack Stack
+	if baseStack != nil {
+		stack = *baseStack
+	}
+
+	if !inspect(base+m.TargetType.ArgumentName, m, &stack) {
+		return
+	}
+
+	inspectRec(base, m, inspect, &stack)
+}
