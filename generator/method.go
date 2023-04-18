@@ -2,16 +2,16 @@ package generator
 
 import (
 	"AutoMapper/generator/commands"
-	mappings2 "AutoMapper/generator/mappings"
+	mappings "AutoMapper/generator/mappings"
 	"fmt"
 	"go/types"
 )
 
 type Method struct {
 	Name          string
-	Target        mappings2.Type
+	Target        mappings.Type
 	ErrorHandling bool
-	Params        []mappings2.Type
+	Params        []mappings.Type
 	Commands      []commands.Command
 }
 
@@ -24,8 +24,17 @@ func (m Method) GenerateMapping(project Project) string {
 	var output string
 
 	var targetStruct Structure
-	var sourceStructs []Structure
 
+	type InputStructure struct {
+		Structure
+		ArgumentName string
+	}
+
+	var sourceStructs []InputStructure
+
+	var params []mappings.Type
+
+	//Iterate over all known structs
 	for _, structure := range project.Structs {
 		sName := structure.Package + structure.Name
 		if sName == m.Target.Package+m.Target.Name {
@@ -35,39 +44,96 @@ func (m Method) GenerateMapping(project Project) string {
 
 		for _, param := range m.Params {
 			if sName == param.Package+param.Name {
-				sourceStructs = append(sourceStructs, structure)
+				sourceStructs = append(sourceStructs, InputStructure{
+					Structure:    structure,
+					ArgumentName: param.ArgumentName,
+				})
 				break
 			}
 		}
 	}
 
+	for _, param := range m.Params {
+		isStruct := false
+		for _, str := range sourceStructs {
+			sName := str.Package + "." + str.Name
+			if param.GetTypeName() == sName {
+				isStruct = true
+				break
+			}
+		}
+
+		if !isStruct {
+			params = append(params, param)
+		}
+	}
+
 	overrides := commands.FilterCommands[commands.OverrideCommand](m.Commands)
+	globalOverrides := commands.FilterCommands[commands.OverrideCommand](project.GlobalCommands)
+	overrides = append(overrides, globalOverrides...)
 
 	fields := targetStruct.Fields
 	targetMappings := StructFieldsToMappings(fields)
 
+	type SourceMapping struct {
+		parent InputStructure
+		nodes  []*mappings.MappingNode
+	}
+
+	var sourceMappings []SourceMapping
+	for _, sourceStruct := range sourceStructs {
+		sourceMappings = append(sourceMappings, SourceMapping{parent: sourceStruct, nodes: StructFieldsToMappings(sourceStruct.Fields)})
+	}
+
 	for _, override := range overrides {
-		mapping := mappings2.Find("target", targetMappings, override.IsOverrideTarget)
+		mapping, path := mappings.Find("", targetMappings, override.IsOverrideTarget)
 		if mapping == nil {
 			fmt.Println("Failed to find override target, ")
 			continue
 		}
 		mapping.Source.Mapped = true
-		mapping.Source.Source = override.OverrideSource()
+		mapping.Source.Source = override.OverrideSource(mapping, path)
 	}
 
 	for _, target := range targetMappings {
 		if target.Source.Mapped {
 			continue
 		}
-		target.Inspect("target", func(fullPath string, node *mappings2.MappingNode) bool {
+		target.Inspect("target.", func(targetFullPath string, targetNode *mappings.MappingNode) bool {
+			for _, sourceMapping := range sourceMappings {
+				for _, field := range sourceMapping.nodes {
+					foundFinalMapping := false
 
+					field.Inspect(sourceMapping.parent.ArgumentName+".", func(sourceFullPath string, sourceNode *mappings.MappingNode) bool {
+						foundMapper, nodeMapper, nodeMapping := project.MapperInterfaces.GetFittingMapper(sourceNode.TargetType, targetNode.TargetType)
+						if foundMapper {
+							targetNode.Source.Mapped = true
+							targetNode.Source.Source = fmt.Sprintf("%s.%s(%s)", nodeMapper.Name, nodeMapping.Name, sourceFullPath)
+							foundFinalMapping = true
+							return false
+						}
+
+						if targetNode.TargetType.GetFullName() == sourceNode.TargetType.GetFullName() {
+							targetNode.Source.Mapped = true
+							targetNode.Source.Source = sourceFullPath
+							foundFinalMapping = true
+							return false
+						}
+
+						return true
+					})
+
+					if foundFinalMapping {
+						return false
+					}
+				}
+			}
 			return true
 		})
 	}
 
 	for _, target := range targetMappings {
-		target.Inspect("target", func(fullPath string, node *mappings2.MappingNode) bool {
+		target.Inspect("", func(fullPath string, node *mappings.MappingNode) bool {
 			if !node.Source.Mapped {
 				output += fmt.Sprintf("\n\t//target.%s is not mapped", fullPath)
 				return true
@@ -81,8 +147,8 @@ func (m Method) GenerateMapping(project Project) string {
 	return output
 }
 
-func StructFieldsToMappings(fields []*types.Var) []*mappings2.MappingNode {
-	var mappings []*mappings2.MappingNode
+func StructFieldsToMappings(fields []*types.Var) []*mappings.MappingNode {
+	var mappings []*mappings.MappingNode
 	for _, field := range fields {
 		if field.Exported() {
 			mappings = append(mappings, NewMapping(field))
@@ -92,13 +158,13 @@ func StructFieldsToMappings(fields []*types.Var) []*mappings2.MappingNode {
 	return mappings
 }
 
-func NewMapping(field *types.Var) *mappings2.MappingNode {
+func NewMapping(field *types.Var) *mappings.MappingNode {
 	t := field.Type()
 	return MappingFromType(field, t)
 }
 
-func MappingFromType(field *types.Var, t types.Type) *mappings2.MappingNode {
-	var result mappings2.MappingNode
+func MappingFromType(field *types.Var, t types.Type) *mappings.MappingNode {
+	var result mappings.MappingNode
 	switch t.(type) {
 	case *types.Pointer:
 		pResult := MappingFromType(field, t.(*types.Pointer).Elem())
@@ -111,29 +177,26 @@ func MappingFromType(field *types.Var, t types.Type) *mappings2.MappingNode {
 	case *types.Basic:
 		basic := t.(*types.Basic)
 
-		result.TargetType = mappings2.Type{
+		result.TargetType = mappings.Type{
 			ArgumentName: field.Name(),
 			Name:         basic.Name(),
 			Package:      "--go--",
 		}
 		break
+	case *types.Struct:
+		struc := t.(*types.Struct)
+		result.Children = StructFieldsToMappings(GetStructureFields(struc))
+		break
 	case *types.Named:
 		named := t.(*types.Named)
-		struc, ok := named.Underlying().(*types.Struct)
-		if !ok {
-			fmt.Println("Unknown type!")
-		}
+		result = *MappingFromType(field, named.Underlying())
 
 		object := named.Obj()
-
-		result.TargetType = mappings2.Type{
+		result.TargetType = mappings.Type{
 			ArgumentName: field.Name(),
 			Name:         object.Name(),
 			Package:      object.Pkg().Path(),
 		}
-
-		result.Children = StructFieldsToMappings(GetStructureFields(struc))
-
 		break
 	default:
 		fmt.Printf("Unknown type detected (%s)\n", t.String())

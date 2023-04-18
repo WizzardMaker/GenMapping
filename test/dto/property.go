@@ -1,8 +1,12 @@
 package dto
 
-import "time"
+import (
+	"AutoMapper/test/double_name/bo"
+	"time"
+)
 
 type Property struct {
-	DtoSimple int
-	Time      time.Time
+	DtoSimple  int
+	DoubleTest bo.DoubleNameTest
+	Time       time.Time
 }

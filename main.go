@@ -4,6 +4,7 @@ import (
 	"AutoMapper/generator"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func main() {
@@ -27,6 +28,13 @@ func GenerateMappers(mainPath string) {
 		return
 	}
 
+	type Output struct {
+		name string
+		text string
+	}
+
+	result := make(map[string]*Output)
+
 	for _, mapper := range project.MapperInterfaces {
 		fmt.Printf("Mapper: %s\n", mapper.Name)
 		for _, method := range mapper.Methods {
@@ -36,7 +44,37 @@ func GenerateMappers(mainPath string) {
 			fmt.Printf("-- To: %v\n", method.Target)
 		}
 
-		fmt.Println(generator.GenerateMapper(mapper, project))
+		output := result[mapper.OutputPath(project)]
+		if output == nil {
+			output = new(Output)
+			result[mapper.OutputPath(project)] = output
+		}
+
+		output.text += generator.GenerateMapper(mapper, project).Methods
+		if output.name != "" {
+			output.name += "_"
+		}
+		output.name += mapper.Name
+	}
+
+	for mapperPath, mapperOutput := range result {
+		finalOutput := generator.ProcessImports(mapperOutput.text)
+		finalOutput = fmt.Sprintf("package %s\n", mapperOutput.name) + finalOutput
+
+		err := os.MkdirAll(filepath.Dir(mapperPath), 0)
+		if err != nil {
+			panic(err)
+		}
+
+		f, err := os.Create(mapperPath)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = f.WriteString(finalOutput)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return

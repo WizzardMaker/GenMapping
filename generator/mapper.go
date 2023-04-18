@@ -9,14 +9,33 @@ import (
 )
 
 type Mapper struct {
-	Interface ast.InterfaceType
-	Name      string
-	Methods   []Method
-	Imports   []mappings.Import
-	Commands  []commands.Command
+	Interface  ast.InterfaceType
+	Name       string
+	outputPath string
+	Methods    []Method
+	Imports    []mappings.Import
+	Commands   []commands.Command
 }
 
-func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Method) {
+func (m Mapper) OutputPath(project *Project) string {
+	outputDirName := "mapper"
+	//TODO: Add global commands
+	//if project != nil {
+	//	projectConfig := commands.FilterCommand[*commands.MapperCommand](project.GlobalCommands)
+	//	if projectConfig != nil && projectConfig.
+	//}
+	config := commands.FilterCommand[*commands.MapperCommand](m.Commands)
+
+	if config != nil {
+		if config.TargetFile.Value != "" {
+			return config.TargetFile.Value
+		}
+	}
+
+	return m.outputPath + "/" + outputDirName + "/" + m.Name + "/mapper" + ".go"
+}
+
+func NewMethods(methodList *ast.FieldList, currentPackage string, info *types.Info) (methods []Method) {
 	for _, method := range methodList.List {
 		errorHappened := false
 
@@ -24,6 +43,9 @@ func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Met
 		if !ok {
 			continue
 		}
+
+		test := info.TypeOf(funcType)
+		fmt.Println(test)
 
 		commandList := commands.FromText(method.Doc.Text(), commands.PerMappingTags...)
 
@@ -61,6 +83,22 @@ func NewMethods(methodList *ast.FieldList, currentPackage string) (methods []Met
 	}
 
 	return
+}
+
+type Mappers []Mapper
+
+func (m Mappers) GetFittingMapper(from, to mappings.Type) (bool, Mapper, Method) {
+	for _, mapper := range m {
+		for _, method := range mapper.Methods {
+			if len(method.Params) == 1 {
+				if method.Params[0].GetTypeName() == from.GetTypeName() && method.Target.GetTypeName() == to.GetTypeName() {
+					return true, mapper, method
+				}
+			}
+		}
+	}
+
+	return false, Mapper{}, Method{}
 }
 
 func NewTypes(decl *ast.FieldList, currentPackage string) (types []mappings.Type) {
@@ -101,6 +139,7 @@ func NewStructure(spec *ast.TypeSpec, info *types.Info, currentPackage string) S
 				continue
 			}
 			structInfo = typ.Underlying().(*types.Struct)
+			currentPackage = typ.Obj().Pkg().Path()
 			break
 		}
 	}

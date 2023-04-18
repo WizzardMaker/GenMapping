@@ -11,12 +11,14 @@ type SourceMapping struct {
 	Mapped bool
 }
 
-func Find(base string, mappingTree []*MappingNode, isTarget func(node *MappingNode, path string) bool) *MappingNode {
+func Find(base string, mappingTree []*MappingNode, isTarget func(node *MappingNode, path string) bool) (*MappingNode, string) {
 	var result *MappingNode
+	var resultPath string
 	for _, mapNode := range mappingTree {
 		mapNode.Inspect(base, func(fullPath string, node *MappingNode) bool {
 			if isTarget(node, fullPath) {
 				result = node
+				resultPath = fullPath
 				return false
 			}
 
@@ -24,11 +26,11 @@ func Find(base string, mappingTree []*MappingNode, isTarget func(node *MappingNo
 		})
 
 		if result != nil {
-			return result
+			return result, resultPath
 		}
 	}
 
-	return result
+	return result, resultPath
 }
 
 func (m *MappingNode) GetNode() *MappingNode {
@@ -54,9 +56,9 @@ func (m *MappingNode) Inspect(base string, inspect InspectionFunc) {
 
 		return true
 	}
-	if !inspect(base+"."+m.TargetType.ArgumentName, m) {
+	if !inspect(base+m.TargetType.ArgumentName, m) {
 		return
 	}
 
-	inspectRec(base+".", m, inspect)
+	inspectRec(base, m, inspect)
 }

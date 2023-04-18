@@ -59,18 +59,47 @@ func ParseProject(projectRoot string) (*Project, error) {
 	loadConfig.Mode = loadMode
 	loadConfig.Fset = &files
 	packs, err := packages.Load(loadConfig, "./...")
-	fmt.Println(packs, err)
+
+	var globalInfos []*types.Info
+	var globalCommands []commands.Command
 
 	for _, a := range parsedProject {
 		var info *types.Info
 		for _, pack := range packs {
-			if pack.Name == a.Name {
+			if len(pack.GoFiles) == 0 {
+				continue
+			}
+
+			for fPath := range a.Files {
+				if pack.GoFiles[0] != fPath {
+					continue
+				}
+
 				info = pack.TypesInfo
+				globalInfos = append(globalInfos, info)
 				break
 			}
 		}
 
+		if info == nil {
+			fmt.Println("Couldn't find info for package: ", a.Name)
+		}
+
 		mappersInPackage, structures, importsInPackage := FindMappersInPackage(a, info)
+
+		//for _, mapper := range mappersInPackage {
+		//	for _, mappingMethod := range mapper.Methods {
+		//		if len(mappingMethod.Params) == 1 {
+		//			//TODO: check for error handling!
+		//			globalCommands = append(globalCommands, &commands.ExpressionCommand{
+		//				Target:     commands.Attribute{Value: mappingMethod.Params[0].GetTypeName()},
+		//				Expression: commands.Attribute{Value: fmt.Sprintf("%s.%s(%s)", mapper.Name, mappingMethod.Name, "%s")},
+		//				IsType:     commands.Attribute{Value: "true"},
+		//			})
+		//		}
+		//	}
+		//}
+
 		mappers = append(mappers, mappersInPackage...)
 		structs = append(structs, structures...)
 		imports = append(imports, importsInPackage...)
@@ -85,6 +114,8 @@ func ParseProject(projectRoot string) (*Project, error) {
 		MapperInterfaces: mappers,
 		Imports:          imports,
 		Structs:          structs,
+		GlobalTypes:      globalInfos,
+		GlobalCommands:   globalCommands,
 	}
 
 	return &proj, nil
@@ -143,34 +174,43 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 							return true
 						}
 
-						methods := NewMethods(interfaceType.Methods, pack.Name)
+						methods := NewMethods(interfaceType.Methods, pack.Name, info)
 
 						var neededImports []mappings.Import
-						for _, method := range methods {
-							types := append(method.Params, method.Target)
+						for i, method := range methods {
+							var methodTypes []*mappings.Type
+							methodTypes = append(methodTypes, &method.Target)
+							for i := range method.Params {
+								methodTypes = append(methodTypes, &method.Params[i])
+							}
 
-							for _, t := range types {
+							for _, t := range methodTypes {
 								for _, packageImport := range packageImports {
 									if packageImport.Name == t.Package {
+										t.Package = packageImport.Path
 										neededImports = append(neededImports, packageImport)
 									}
 								}
 							}
+
+							methods[i] = method
 						}
 
 						mapper := Mapper{
-							Interface: *interfaceType,
-							Name:      typeSpec.Name.Name,
-							Methods:   methods,
-							Imports:   neededImports,
-							Commands:  commands.FromText(doc, commands.PerMapperTags...),
+							Interface:  *interfaceType,
+							Name:       typeSpec.Name.Name,
+							Methods:    methods,
+							Imports:    neededImports,
+							Commands:   commands.FromText(doc, commands.PerMapperTags...),
+							outputPath: GetBasePathOfPkg(pack),
 						}
 						mappers = append(mappers, mapper)
 					}
 
 					_, ok = typeSpec.Type.(*ast.StructType)
 					if ok {
-						structs = append(structs, NewStructure(typeSpec, info, pack.Name))
+						structure := NewStructure(typeSpec, info, pack.Name)
+						structs = append(structs, structure)
 					}
 				}
 			}
@@ -182,4 +222,12 @@ func FindMappersInPackage(pack *ast.Package, info *types.Info) ([]Mapper, []Stru
 	})
 
 	return mappers, structs, packageImports
+}
+
+func GetBasePathOfPkg(pack *ast.Package) string {
+	for path := range pack.Files {
+		return filepath.Dir(path)
+	}
+
+	return ""
 }

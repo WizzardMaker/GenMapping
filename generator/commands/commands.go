@@ -12,7 +12,7 @@ type Command interface {
 type OverrideCommand interface {
 	Command
 	IsOverrideTarget(node *mappings.MappingNode, path string) bool
-	OverrideSource() string
+	OverrideSource(node *mappings.MappingNode, nodePath string) string
 }
 
 func FromText(text string, allowedTags ...Tag) []Command {
