@@ -30,6 +30,7 @@ type PropertyMapper interface {
 
 	//BoToDtoFixed
 	//@translate(from="property.BoSimple", to="DtoSimple")
+	//@translate(from="test", to="DoubleTest")
 	BoToDtoFixed(property bo.Property, test bo2.DoubleNameTest) dto.Property
 }
 
