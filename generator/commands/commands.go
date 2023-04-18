@@ -6,7 +6,7 @@ import (
 )
 
 type Command interface {
-	Read(text string)
+	Read(text string) string
 }
 
 type OverrideCommand interface {
@@ -30,20 +30,23 @@ func FromText(text string, allowedTags ...Tag) []Command {
 	return commands
 }
 
+type CommandParser func(text string) []Command
+
 func NewCommand[T any, PT interface {
-	Read(text string)
+	Read(text string) string
 	*T
-}](tag Tag) func(text string) []Command {
+}](tag Tag) CommandParser {
 	return func(text string) []Command {
 		commands := strings.Count(text, string(tag))
 
 		var result []Command
 		for i := 0; i < commands; i++ {
-			var n T
-			var pn PT
-			pn = &n
-			pn.Read(text)
-			result = append(result, pn)
+			var command T
+			var commandInterface PT
+			commandInterface = &command
+			readText := commandInterface.Read(text)
+			text = strings.Replace(text, readText, "", 1)
+			result = append(result, commandInterface)
 		}
 
 		return result
@@ -52,7 +55,7 @@ func NewCommand[T any, PT interface {
 
 type Tag string
 
-type CommandMap map[Tag]func(text string) []Command
+type CommandMap map[Tag]CommandParser
 
 var commandMap = CommandMap{
 	MapperTag:      NewCommand[MapperCommand](MapperTag),

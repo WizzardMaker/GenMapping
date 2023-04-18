@@ -6,8 +6,10 @@ type MapperCommand struct {
 	TargetFile Attribute
 }
 
-func (c *MapperCommand) Read(text string) {
-	_ = getCommandText(text, MapperTag)
+func (c *MapperCommand) Read(text string) string {
+	_, readText := getCommandText(text, MapperTag)
+
+	return readText
 }
 
 var PerMapperTags = []Tag{MapperTag}

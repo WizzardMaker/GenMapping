@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-func getCommandText(text string, command Tag) string {
+func getCommandText(text string, command Tag) (string, string) {
 	pattern := fmt.Sprintf("%s\\(([\\w\\W]*?)\\)", command)
 	return getMultilineRegexResult(text, pattern)
 }
 
-func getMultilineRegexResult(text string, pattern string) string {
+func getMultilineRegexResult(text string, pattern string) (string, string) {
 	pattern = "(?m)" + pattern
 	r, err := regexp.Compile(pattern)
 	if err != nil {
@@ -20,11 +20,11 @@ func getMultilineRegexResult(text string, pattern string) string {
 	results := r.FindStringSubmatch(text)
 
 	if len(results) < 2 {
-		return ""
+		return "", ""
 	}
 
 	result := strings.Replace(strings.TrimSpace(results[1]), "//", "", -1)
-	return result
+	return result, results[0]
 }
 
 func FilterCommand[T Command](commands []Command) T {

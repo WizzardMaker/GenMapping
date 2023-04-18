@@ -15,7 +15,7 @@ func (a *Attribute) FromCommandText(name, text string) {
 	a.Name = name
 
 	pattern := fmt.Sprintf("%s=\"([\\w\\W]*?)\"", a.Name)
-	a.Value = getMultilineRegexResult(text, pattern)
+	a.Value, _ = getMultilineRegexResult(text, pattern)
 
 	if a.Value == "" {
 		a.Value = a.Default
