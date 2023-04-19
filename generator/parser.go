@@ -58,7 +58,8 @@ func ParseProject(projectRoot string) (*Project, error) {
 		if d.IsDir() {
 			parsed, err := parser.ParseDir(&files, filePath, nil, parser.ParseComments)
 			if err != nil {
-				return err
+				fmt.Println("Error during parsing of package \""+d.Name()+"\"\n\t- Error:\n\t", err)
+				return nil
 			}
 			parsedProject = merge(parsed, parsedProject)
 
