@@ -27,7 +27,7 @@ func ParseProject(projectRoot string) (*Project, error) {
 		return nil, err
 	}
 
-	r, err := regexp.Compile("module (.*)")
+	r, err := regexp.Compile("module ([\\w._/\\\\]*)")
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +121,10 @@ func ParseProject(projectRoot string) (*Project, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Packages found by packages.Load: ", len(packs))
+	fmt.Println("Packages found by parser: ", len(parsedProject))
+	fmt.Println("Structs found by parser: ", len(structs))
 
 	proj := Project{
 		Packages:         parsedProject,
