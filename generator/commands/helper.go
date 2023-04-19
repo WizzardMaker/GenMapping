@@ -7,7 +7,7 @@ import (
 )
 
 func getCommandText(text string, command Tag) (string, string) {
-	pattern := fmt.Sprintf("%s\\(([\\w\\W]*?)\\)", command)
+	pattern := fmt.Sprintf("%s\\(([^@]*)\\)", command)
 	return getMultilineRegexResult(text, pattern)
 }
 
