@@ -74,7 +74,8 @@ func GenerateMappers(mainPath string) {
 
 		formattedOutput, err := format.Source([]byte(finalOutput))
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
+			formattedOutput = []byte(finalOutput)
 		}
 
 		_, err = f.Write(formattedOutput)
