@@ -54,12 +54,12 @@ func ProcessImports(mappingFunctions string) string {
 	const IMPORT_PATTERN = "%\\*__\\*%"
 
 	// html/template.X = 0->html/template 1->template 2->X
-	r, err := regexp.Compile(IMPORT_PATTERN + "((?:[\\w\\d_/]*?\\/)?([\\w\\d_-]*?))\\.(.*?)" + IMPORT_PATTERN)
+	r, err := regexp.Compile(IMPORT_PATTERN + "((?:[\\w\\d_/.]*?\\/)?([\\w\\d_-]*?))\\.(.*?)" + IMPORT_PATTERN)
 	if err != nil {
 		panic(err)
 	}
 	foundImports := r.FindAllStringSubmatch(mappingFunctions, -1)
-	alreadyImports := make(map[string][]int)
+	alreadyImports := make(map[string][][]int)
 
 	//var imports []string
 
@@ -75,13 +75,17 @@ func ProcessImports(mappingFunctions string) string {
 		fmt.Println(packetPath, " ", packet, " ", obj)
 
 		found := false
-		for _, imp := range alreadyImports[packet] {
-			if foundImports[imp][1] == packetPath {
+		at := 0
+		for i, imp := range alreadyImports[packet] {
+			if foundImports[imp[0]][1] == packetPath {
 				found = true
+				at = i
 			}
 		}
 		if !found {
-			alreadyImports[packet] = append(alreadyImports[packet], i)
+			alreadyImports[packet] = append(alreadyImports[packet], []int{i})
+		} else {
+			alreadyImports[packet][at] = append(alreadyImports[packet][at], i)
 		}
 	}
 
@@ -89,7 +93,7 @@ func ProcessImports(mappingFunctions string) string {
 
 	for _, importIndices := range alreadyImports {
 		for count, index := range importIndices {
-			importItem := foundImports[index]
+			importItem := foundImports[index[0]]
 			if strings.Contains(importItem[0], "--go--") {
 				output = strings.Replace(output, importItem[0], importItem[3], -1)
 				continue
@@ -99,14 +103,17 @@ func ProcessImports(mappingFunctions string) string {
 
 			var packageOutput string
 			if count != 0 {
-				packageOutput = fmt.Sprintf("%s%d.%s", importItem[2], count+1, importItem[3])
+				packageOutput = fmt.Sprintf("%s%d", importItem[2], count+1)
 				importText += fmt.Sprintf("%s%d", importItem[2], count+1)
 			} else {
-				packageOutput = fmt.Sprintf("%s.%s", importItem[2], importItem[3])
+				packageOutput = fmt.Sprintf("%s", importItem[2])
 			}
 
 			importText += fmt.Sprintf("\"%s\"", importItem[1])
-			output = strings.Replace(output, importItem[0], packageOutput, -1)
+			for removeIndex := range index {
+				removeItem := foundImports[index[removeIndex]]
+				output = strings.Replace(output, removeItem[0], packageOutput+"."+removeItem[3], -1)
+			}
 		}
 	}
 
