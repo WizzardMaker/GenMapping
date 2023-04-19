@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"AutoMapper/generator/mappings"
+	"GenMapping/generator/mappings"
 	"strings"
 )
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"AutoMapper/generator"
+	"GenMapping/generator"
 	"fmt"
 	"go/format"
 	"os"

@@ -1,9 +1,9 @@
-# Go - AutoMapper
+# Go - GenMapping
 This project is a struct to struct mapping code generator for Go.
 
 ## Concept
-AutoMapper analyzes a Go module and searches for interfaces which describe desired mapping operations. 
-AutoMapper generates mapper based on those interfaces. The generation can be configured with tag documentation.
+GenMapping analyzes a Go module and searches for interfaces which describe desired mapping operations. 
+GenMapping generates mapper based on those interfaces. The generation can be configured with tag documentation.
 
 All mappers can also cross-reference themselves in the mapping process:
 ```go
@@ -21,12 +21,12 @@ type Bar2 struct {}
 When you create a mapper for Bar to Bar2, the mapper for Foo to Foo2 can use that already defined mapper, removing the necessity to write that logic yourself
 
 ### Tags
-Tags are comment annotations which instruct AutoMapper how to generate the mapper functions.
+Tags are comment annotations which instruct GenMapping how to generate the mapper functions.
 
 Documentation for Tags can be found in `documentation/Tags.mnd`
 
 ### Syntax
-A mapper is a simple Go interface annotated with the `@mapper` tag. This tag tells AutoMapper, that this interface describes mapping functions.
+A mapper is a simple Go interface annotated with the `@mapper` tag. This tag tells GenMapping, that this interface describes mapping functions.
 
 Mapping functions have the following rules:
 - Only 1 return is allowed _(error handling is planned in a future update)_
@@ -61,14 +61,14 @@ type PropertyMapper interface {
 }
 ```
 
-AutoMapper will generate a mapper function like this:
+GenMapping will generate a mapper function like this:
 ```go
 package SensorMapper
 
 import (
-	"AutoMapper/test/bo"
-	"AutoMapper/test/dto"
-	"AutoMapper/test/mapper/PropertyMapper"
+	"GenMapping/test/bo"
+	"GenMapping/test/dto"
+	"GenMapping/test/mapper/PropertyMapper"
 )
 
 //SensorMapper:
@@ -94,8 +94,8 @@ func BoToDto(sensor bo.Sensor) (target dto.Sensor) {
 package PropertyMapper
 
 import (
-  "AutoMapper/test/bo"
-  "AutoMapper/test/dto"
+  "GenMapping/test/bo"
+  "GenMapping/test/dto"
 )
 
 //PropertyMapper:

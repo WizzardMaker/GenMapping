@@ -1,7 +1,7 @@
 package mappings
 
 import (
-	"AutoMapper/helper"
+	"GenMapping/helper"
 	"go/ast"
 )
 

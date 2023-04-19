@@ -1,4 +1,4 @@
-module AutoMapper
+module GenMapping
 
 go 1.20
 

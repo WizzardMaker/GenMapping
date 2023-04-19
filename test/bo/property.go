@@ -1,7 +1,7 @@
 package bo
 
 import (
-	"AutoMapper/test/double_name/bo"
+	"GenMapping/test/double_name/bo"
 	"time"
 )
 

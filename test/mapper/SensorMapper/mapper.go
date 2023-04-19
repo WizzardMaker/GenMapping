@@ -1,9 +1,9 @@
 package SensorMapper
 
 import (
-	"AutoMapper/test/bo"
-	"AutoMapper/test/dto"
-	"AutoMapper/test/mapper/PropertyMapper"
+	"GenMapping/test/bo"
+	"GenMapping/test/dto"
+	"GenMapping/test/mapper/PropertyMapper"
 )
 
 //SensorMapper:

@@ -1,11 +1,11 @@
 # Tags
-AutoMapper can be configured with tags. Each tag corresponds to a different operation or configuration
+GenMapping can be configured with tags. Each tag corresponds to a different operation or configuration
 
 ## Mapping Method Tags
 > ## Translation (@translate)
 > The translation tag directly maps a given source parameter to the target field
 > 
-> _Beware - this operation is not type checked by AutoMapper and could result in incorrect/not compileable output_
+> _Beware - this operation is not type checked by GenMapping and could result in incorrect/not compileable output_
 > ### Syntax
 > ```go
 > //@translate(from="A", to="B")
@@ -17,7 +17,7 @@ AutoMapper can be configured with tags. Each tag corresponds to a different oper
 > ## Expression (@expression)
 > The expression tag allows to define custom code for the mapping of the target field
 > 
-> _Beware - this operation is not checked by AutoMapper and could result in incorrect/not compileable output_
+> _Beware - this operation is not checked by GenMapping and could result in incorrect/not compileable output_
 > ### Syntax
 > ```
 > //@expression(expression="", target="", isType="false|true")

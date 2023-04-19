@@ -1,9 +1,9 @@
 package test
 
 import (
-	"AutoMapper/test/bo"
-	bo2 "AutoMapper/test/double_name/bo"
-	"AutoMapper/test/dto"
+	"GenMapping/test/bo"
+	bo2 "GenMapping/test/double_name/bo"
+	"GenMapping/test/dto"
 )
 
 // SensorMapper

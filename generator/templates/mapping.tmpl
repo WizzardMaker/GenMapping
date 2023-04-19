@@ -1,5 +1,5 @@
 {{- define "mapping" -}}
-{{- /*gotype:AutoMapper/generator.Method*/ -}}
+{{- /*gotype:GenMapping/generator.Method*/ -}}
 func {{.Name}}({{- range $index, $element := .Params -}}{{if ne $index 0}}, {{end}}{{$element.ArgumentName}} %*__*%{{$element.GetTypeName}}%*__*%  {{- end -}}) ({{.Target.ArgumentName}}  %*__*%{{.Target.GetTypeName}}%*__*%  {{if .ErrorHandling}}, err error {{end}}) {
 {{- .GenerateMapping getProject}}
     return

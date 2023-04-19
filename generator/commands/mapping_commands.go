@@ -1,6 +1,6 @@
 package commands
 
-import "AutoMapper/generator/mappings"
+import "GenMapping/generator/mappings"
 
 const MappingTag Tag = "@mapping"
 

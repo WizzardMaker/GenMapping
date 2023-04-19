@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"AutoMapper/generator/commands"
-	mappings "AutoMapper/generator/mappings"
+	"GenMapping/generator/commands"
+	mappings "GenMapping/generator/mappings"
 	"fmt"
 	"go/types"
 )
